@@ -1,4 +1,4 @@
-pragma solidity ^0.4.25;
+pragma solidity ^0.5.0;
 
 // It's important to avoid vulnerabilities due to numeric overflow bugs
 // OpenZeppelin's SafeMath library, when used correctly, protects agains such bugs
@@ -29,12 +29,18 @@ contract FlightSuretyApp {
     struct Flight {
         bool isRegistered;
         uint8 statusCode;
-        uint256 updatedTimestamp;        
+        uint256 updatedTimestamp;
         address airline;
     }
     mapping(bytes32 => Flight) private flights;
 
- 
+    //Prj8: Add reference to data contract in app contract
+    FlightSuretyData flightsuretydata;
+    
+    //Prj8: Add reference to for multiparty concensus
+    address[] multiCallsflightReg = new address[](0);
+    address[] multiCallsModeChange = new address[](0);
+    uint8 private constant MIN_SUPPORT = 3;
     /********************************************************************************************/
     /*                                       FUNCTION MODIFIERS                                 */
     /********************************************************************************************/
@@ -44,13 +50,14 @@ contract FlightSuretyApp {
 
     /**
     * @dev Modifier that requires the "operational" boolean variable to be "true"
-    *      This is used on all state changing functions to pause the contract in 
+    *      This is used on all state changing functions to pause the contract in
     *      the event there is an issue that needs to be fixed
     */
-    modifier requireIsOperational() 
+    modifier requireIsOperational()
     {
          // Modify to call data contract's status
-        require(true, "Contract is currently not operational");  
+        bool currOperational = flightsuretydata.dc_isOperational();
+        require(currOperational = true, "Contract is currently not operational");
         _;  // All modifiers require an "_" which indicates where the function body will be added
     }
 
@@ -73,47 +80,108 @@ contract FlightSuretyApp {
     */
     constructor
                                 (
-                                ) 
-                                public 
+                                    address DataContractAddress
+                                )
+                                public
     {
         contractOwner = msg.sender;
+        flightsuretydata = FlightSuretyData(DataContractAddress);
     }
 
     /********************************************************************************************/
     /*                                       UTILITY FUNCTIONS                                  */
     /********************************************************************************************/
-
-    function isOperational() 
-                            public 
-                            pure 
-                            returns(bool) 
+    //Prj - 8 : get operational info from data contract
+    function isOperational()
+                            public
+                            view
+                            returns(bool)
     {
-        return true;  // Modify to call data contract's status
+        return flightsuretydata.dc_isOperational();  // Modify to call data contract's status
     }
 
     /********************************************************************************************/
     /*                                     SMART CONTRACT FUNCTIONS                             */
     /********************************************************************************************/
 
-  
    /**
     * @dev Add an airline to the registration queue
-    *
+    * Prj 8 : - to be called from Daaap
     */
     function registerAirline
                             (
+                                address newAirLineAddress
                             )
-                            external
-                            pure
+                            public
+  //                        pure
                             returns(bool success, uint256 votes)
     {
-        return (success, 0);
+        uint16 airlineCount = flightsuretydata.dc_getAirLineAcount();
+        bool varConsensus = false;
+        if (airlineCount < 4)
+             {
+               flightsuretydata.dc_registerairline(newAirLineAddress);
+               return(true, airlineCount);
+             }
+        else {
+              varConsensus = isConcensus(multiCallsflightReg);
+              if (varConsensus) {
+                    multiCallsflightReg = new address[](0);
+                    flightsuretydata.dc_registerairline(newAirLineAddress);
+                    return(true, airlineCount);
+              }
+              else{
+                    return(false, airlineCount);
+              }
+            }
     }
 
+    function setOperatingStatus
+                            (
+                                bool mode
+                            )
+                            public
 
+    {
+        uint16 airlineCount = flightsuretydata.dc_getAirLineAcount();
+        bool varConsensus = false;
+        if (airlineCount < 4)
+             {
+               flightsuretydata.dc_setOperatingStatus(mode);
+             }
+        else {
+              varConsensus = isConcensus(multiCallsModeChange);
+              if (varConsensus) {
+                    multiCallsModeChange = new address[](0);
+                    flightsuretydata.dc_setOperatingStatus(mode);
+              }
+            }
+    }
+
+    function isConcensus
+              (address[] storage multiCalls) private
+               returns (bool consensusOk)
+               {
+               consensusOk = false;
+               bool isDuplicate = false;
+               for(uint c = 0; c < multiCalls.length; c++) {
+                   if (multiCalls[c] == msg.sender)
+                   {
+                      isDuplicate = true;
+                      break;
+                   }
+               }
+               require(!isDuplicate, "Caller has already called this function.");
+               multiCalls.push(msg.sender);
+               if (multiCalls.length >= MIN_SUPPORT) {
+                   consensusOk = true;
+               }
+               return consensusOk;
+    }
+   
    /**
     * @dev Register a future flight for insuring.
-    *
+    * Prj 8 : - to be called from Daap
     */
     function registerFlight
                                 (
@@ -121,9 +189,9 @@ contract FlightSuretyApp {
                                 external
                                 pure
     {
-
+      //  flightsuretydata.registerflight();
     }
-    
+
    /**
     * @dev Called after oracle has updated flight status
     *
@@ -145,7 +213,7 @@ contract FlightSuretyApp {
     function fetchFlightStatus
                         (
                             address airline,
-                            string flight,
+                            string calldata flight,
                             uint256 timestamp
                         )
                         external
@@ -228,16 +296,14 @@ contract FlightSuretyApp {
     function getMyIndexes
                             (
                             )
-                            view
                             external
-                            returns(uint8[3])
+                            view
+                            returns( uint8[3] memory)
     {
         require(oracles[msg.sender].isRegistered, "Not registered as an oracle");
 
         return oracles[msg.sender].indexes;
     }
-
-
 
 
     // Called by oracle when a response is available to an outstanding request
@@ -248,13 +314,15 @@ contract FlightSuretyApp {
                         (
                             uint8 index,
                             address airline,
-                            string flight,
+                            string calldata flight,
                             uint256 timestamp,
                             uint8 statusCode
                         )
                         external
     {
-        require((oracles[msg.sender].indexes[0] == index) || (oracles[msg.sender].indexes[1] == index) || (oracles[msg.sender].indexes[2] == index), "Index does not match oracle request");
+        require((oracles[msg.sender].indexes[0] == index) ||
+        (oracles[msg.sender].indexes[1] == index) ||
+        (oracles[msg.sender].indexes[2] == index), "Index does not match oracle request");
 
 
         bytes32 key = keccak256(abi.encodePacked(index, airline, flight, timestamp));
@@ -278,11 +346,11 @@ contract FlightSuretyApp {
     function getFlightKey
                         (
                             address airline,
-                            string flight,
+                            string  memory flight,
                             uint256 timestamp
                         )
-                        pure
                         internal
+                        pure
                         returns(bytes32)
     {
         return keccak256(abi.encodePacked(airline, flight, timestamp));
@@ -294,19 +362,19 @@ contract FlightSuretyApp {
                                 address accountS
                             )
                             internal
-                            returns(uint8[3])
+                            returns(uint8[3] memory)
     {
         uint8[3] memory indexes;
-        indexes[0] = getRandomIndex(account);
-        
+        indexes[0] = getRandomIndex(accountS);
+
         indexes[1] = indexes[0];
         while(indexes[1] == indexes[0]) {
-            indexes[1] = getRandomIndex(account);
+            indexes[1] = getRandomIndex(accountS);
         }
 
         indexes[2] = indexes[1];
         while((indexes[2] == indexes[0]) || (indexes[2] == indexes[1])) {
-            indexes[2] = getRandomIndex(account);
+            indexes[2] = getRandomIndex(accountS);
         }
 
         return indexes;
@@ -331,7 +399,41 @@ contract FlightSuretyApp {
 
         return random;
     }
-
 // endregion
-
-}   
+}
+//Prj - 8 Add code for interfaces
+    /********************************************************************************************/
+    /*                                     Interface for data contract                          */
+    /********************************************************************************************/
+contract FlightSuretyData{
+    function dc_registerairline
+                            (
+                                address airlineaddr
+                            )
+                            external
+                            pure
+                            returns(bool success)
+    {
+    }
+    function dc_getAirLineAcount
+                            (
+                            )
+                            external
+                            pure
+                            returns(uint16 airlinecount)
+    {
+    }
+    function dc_isOperational()
+                            public
+                            pure
+                            returns(bool)
+    {
+    }
+    function dc_setOperatingStatus
+                            (
+                                bool mode
+                            )
+                            external
+    {
+    }
+}
