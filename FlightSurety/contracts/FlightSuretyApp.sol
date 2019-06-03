@@ -57,16 +57,16 @@ contract FlightSuretyApp {
     {
          // Modify to call data contract's status
         bool currOperational = flightsuretydata.dc_isOperational();
-        require(currOperational = true, "Contract is currently not operational");
+        require(currOperational = true, "App Contract is currently not operational");
         _;  // All modifiers require an "_" which indicates where the function body will be added
     }
 
     /**
     * @dev Modifier that requires the "ContractOwner" account to be the function caller
     */
-    modifier requireContractOwner()
+    modifier requireContractOwnerApp()
     {
-        require(msg.sender == contractOwner, "Caller is not contract owner");
+        require(msg.sender == contractOwner, "App Caller is not contract owner");
         _;
     }
 
@@ -113,6 +113,7 @@ contract FlightSuretyApp {
                                 address newAirLineAddress
                             )
                             public
+                            requireIsOperational
   //                        pure
                             returns(bool success, uint256 votes)
     {
@@ -135,25 +136,32 @@ contract FlightSuretyApp {
               }
             }
     }
-
     function setOperatingStatus
                             (
                                 bool mode
                             )
                             public
+                            {
+                               _setOperatingStatus(mode);
+                            }
 
+    function _setOperatingStatus
+                            (
+                                bool mode
+                            )
+                            private
     {
-        uint16 airlineCount = flightsuretydata.dc_getAirLineAcount();
         bool varConsensus = false;
+        uint16 airlineCount = flightsuretydata.dc_getAirLineAcount();
         if (airlineCount < 4)
              {
-               flightsuretydata.dc_setOperatingStatus(mode);
+               flightsuretydata.dc_setOperatingStatus(mode,msg.sender);
              }
         else {
               varConsensus = isConcensus(multiCallsModeChange);
               if (varConsensus) {
                     multiCallsModeChange = new address[](0);
-                    flightsuretydata.dc_setOperatingStatus(mode);
+                    flightsuretydata.dc_setOperatingStatus(mode,msg.sender);
               }
             }
     }
@@ -431,7 +439,8 @@ contract FlightSuretyData{
     }
     function dc_setOperatingStatus
                             (
-                                bool mode
+                                bool mode,
+                                address callerAddress
                             )
                             external
     {

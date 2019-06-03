@@ -30,6 +30,7 @@ contract FlightSuretyData {
                                 public
     {
         contractOwner = msg.sender;
+        dc_registerairline(msg.sender);
     }
 
     /********************************************************************************************/
@@ -46,19 +47,26 @@ contract FlightSuretyData {
     */
     modifier requireIsOperational()
     {
-        require(operational, "Contract is currently not operational");
+        require(operational == true, "Flight Contracts are currently not operational");
         _;  // All modifiers require an "_" which indicates where the function body will be added
     }
 
     /**
     * @dev Modifier that requires the "ContractOwner" account to be the function caller
     */
-    modifier requireContractOwner()
+    modifier requireContractOwner(address callerAddress)
     {
-        require(msg.sender == contractOwner, "Caller is not contract owner");
+//        require(msg.sender == contractOwner, "Data Caller is not contract owner");
+        require(callerAddress == contractOwner, "Data Caller is not contract owner");
+
         _;
     }
 
+    modifier requireAuthorizedCaller()
+    {
+        require(authorizedContracts[msg.sender] == true, "Data Caller is not Authorized");
+        _;
+    }
     /********************************************************************************************/
     /*                                       UTILITY FUNCTIONS                                  */
     /********************************************************************************************/
@@ -71,23 +79,33 @@ contract FlightSuretyData {
     function dc_isOperational()
                             public
                             view
+                            requireAuthorizedCaller
                             returns(bool)
     {
         return operational;
     }
-
-
+    //debug function to check contract owner
+    function whoIsContractOwner()
+                            public             //private
+                            view
+                            returns(address)
+    {
+        return contractOwner;
+        //return msg.sender;
+    }
     /**
     * @dev Sets contract operations on/off
     *
     * When operational mode is disabled, all write transactions except for this one will fail
     */
-    function setOperatingStatus
+    function dc_setOperatingStatus
                             (
-                                bool mode
+                                bool mode,
+                                address callerAddress
                             )
                             external
-                            requireContractOwner
+                            requireContractOwner(callerAddress)
+                            requireAuthorizedCaller
     {
         operational = mode;
     }
@@ -107,6 +125,7 @@ contract FlightSuretyData {
                             )
                             external
                             requireIsOperational
+                            requireAuthorizedCaller
                             returns(bool successflag)
                             
     {
@@ -119,7 +138,8 @@ contract FlightSuretyData {
                             (
                             )
                             external
-                            requireIsOperational
+                            //requireIsOperational
+                            requireAuthorizedCaller
                             view
                             returns(uint16 airlinecount)
     {
@@ -128,9 +148,9 @@ contract FlightSuretyData {
     function authorizeCaller(address allowedCallerAddress)
                            public
                            requireIsOperational
-                           requireContractOwner
+                           requireContractOwner(msg.sender)
     {
-        authorizedContracts[allowedCallerAddress] = false;
+        authorizedContracts[allowedCallerAddress] = true;
     }
    /**
     * @dev Buy insurance for a flight
