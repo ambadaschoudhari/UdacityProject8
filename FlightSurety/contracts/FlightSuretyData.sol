@@ -15,6 +15,27 @@ contract FlightSuretyData {
     address[] private registredAirlines = new address[](0);
     //Prj - 8 Add code for to limit authorized callers
     mapping (address => bool) authorizedContracts;
+    uint private   currentFund;// = 0;
+
+    event evntDebugBool(bool bvar);
+    event evntDebuguint(uint uintvar);
+
+    uint  unitTestvar1;
+    bool  bTestVar2;
+    function TestVar1()
+                            public
+                            view
+                            returns(uint)
+    {
+        return unitTestvar1;
+    }
+    function TestVar2()
+                            public
+                            view
+                            returns(bool)
+    {
+        return bTestVar2;
+    }
 
     /********************************************************************************************/
     /*                                       EVENT DEFINITIONS                                  */
@@ -30,7 +51,9 @@ contract FlightSuretyData {
                                 public
     {
         contractOwner = msg.sender;
-        dc_registerairline(msg.sender);
+        currentFund = 0;
+        //register first airline
+        registredAirlines.push(msg.sender);
     }
 
     /********************************************************************************************/
@@ -123,18 +146,42 @@ contract FlightSuretyData {
                             (
                                 address airlineaddr
                             )
-                            external
+                            public
+                            payable
                             requireIsOperational
                             requireAuthorizedCaller
                             returns(bool successflag)
-                            
     {
            bool successFlag = false;
            registredAirlines.push(airlineaddr);
            successFlag = true;
+           unitTestvar1 = 2;
+           //if (true==true){return (true);}
            return(successFlag);
     }
-    function dc_getAirLineAcount
+
+    function dc_isAirlineRegistered
+                            (
+                                address airelineaddr
+                            )
+                            external
+                            view
+                            requireIsOperational
+                            requireAuthorizedCaller
+                            returns(bool IsRegistered)
+    {
+           IsRegistered = false;
+               for(uint c = 0; c < registredAirlines.length; c++) {
+                   if (registredAirlines[c] == airelineaddr)
+                   {
+                      IsRegistered = true;
+                      break;
+                   }
+               }
+           return(IsRegistered);
+    }
+
+    function dc_getAirLineCount
                             (
                             )
                             external
@@ -180,13 +227,13 @@ contract FlightSuretyData {
      *  @dev Transfers eligible payout funds to insuree
      *
     */
-    function pay
-                            (
-                            )
-                            external
-                            pure
-    {
-    }
+  //  function pay
+  //                          (
+  //                              uint256 fundAmount
+  //                          )
+  //  {
+  //      currentFund = currentFund.add(fundAmount);
+  //  }
 
    /**
     * @dev Initial funding for the insurance. Unless there are too many delayed flights
@@ -199,6 +246,13 @@ contract FlightSuretyData {
                             public
                             payable
     {
+         require(msg.value >= 10 ether,"Registration fee has to me minimum 10 ethers");
+         //need to check on how to use safemath
+         //currentFund = uint(msg.value);
+         emit evntDebuguint(uint(msg.value));
+         return;
+
+
     }
 
     function getFlightKey
@@ -223,6 +277,7 @@ contract FlightSuretyData {
                             payable
     {
         fund();
+        emit evntDebuguint(1);
     }
 
 

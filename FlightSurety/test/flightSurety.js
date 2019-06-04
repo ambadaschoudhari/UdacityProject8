@@ -13,7 +13,7 @@ contract('Flight Surety Tests', async (accounts) => {
   /****************************************************************************************/
   /* Operations and Settings                                                              */
   /****************************************************************************************/
-
+  /*
   it(`Case 1: (multiparty) has correct initial isOperational() value`, async function () {
 
     // Get operating status
@@ -79,25 +79,89 @@ contract('Flight Surety Tests', async (accounts) => {
       assert.equal(status, true, "Test case 4: Operating status is not set to true");
 
   });
-/*
+
   it('Case 5: (airline) cannot register an Airline using registerAirline() if it is not funded', async () => {
     
     // ARRANGE
     let newAirline = accounts[2];
-
+    let status = await config.flightSuretyApp.isOperational.call();
+    console.log("status: "+status)
     // ACT
     try {
         await config.flightSuretyApp.registerAirline(newAirline, {from: config.firstAirline});
     }
     catch(e) {
-
+      console.log("Test case 5 Error : "+e);
     }
-    let result = await config.flightSuretyData.isAirline.call(newAirline); 
+    let result = await config.flightSuretyApp.isAirlineRegistered(newAirline); 
 
-    // ASSERT
     assert.equal(result, false, "Airline should not be able to register another airline if it hasn't provided funding");
 
   });
- 
-*/
+
+   it('Case 6: (airline) cannot register an Airline using registerAirline() if it is not funded enough', async () => {
+    
+    // ARRANGE
+    let newAirline = accounts[2];
+    let status = await config.flightSuretyApp.isOperational.call();
+    let reg_fee =  web3.utils.toWei("9", "ether")
+
+    console.log("status: "+status)
+    // ACT
+    try {
+        await config.flightSuretyApp.registerAirline(newAirline, {from: config.firstAirline, value : reg_fee});
+    }
+    catch(e) {
+      console.log("Test case 5 Error : "+e);
+    }
+    let result = await config.flightSuretyApp.isAirlineRegistered(newAirline); 
+
+    assert.equal(result, false, "Airline should not be able to register another airline if it hasn't provided funding");
+
+  });
+  */
+  it('Case 7: First four airlines can be registered without consensus ', async () => {
+    
+    // ARRANGE
+    let Airline_2 = accounts[2];
+    let Airline_3 = accounts[3];
+    let Airline_4 = accounts[4];
+    let reg_fee =  web3.utils.toWei("10", "ether")
+    let Airline_5 = accounts[5];    
+
+    //let status = await config.flightSuretyApp.isOperational.call();
+    //console.log("UC7 status: "+status)
+    await config.flightSuretyApp.registerAirline(Airline_2, {from: config.firstAirline, value : reg_fee});
+    let result2 = await config.flightSuretyApp.isAirlineRegistered(Airline_2); 
+    console.log("Second airline registration status : " + result2);
+    //let testvar1 = await config.flightSuretyApp.TestVar1(); 
+    //console.log("Test Var Value : " + testvar1);    
+    assert.equal(result2, true, "Register second airline without concenus");
+
+    //registered airline is able to register another airline
+    await config.flightSuretyApp.registerAirline(Airline_3, {from: Airline_2, value : reg_fee});
+    let result3 = await config.flightSuretyApp.isAirlineRegistered(Airline_3); 
+    assert.equal(result3, true, "Register third airline without concenus");
+    console.log("Third airline registration status : " + result3);    
+    console.log("Third airline registration status" + result3);    
+
+    await config.flightSuretyApp.registerAirline(Airline_4, {from: Airline_3, value : reg_fee});
+    let result4 = await config.flightSuretyApp.isAirlineRegistered(Airline_4); 
+    console.log("Fourth airline registration status : " + result4);    
+    assert.equal(result4, true, "Register fourth airline without concenus");
+
+    await config.flightSuretyApp.registerAirline(Airline_5, {from: Airline_3, value : reg_fee});
+    let result5_1 = await config.flightSuretyApp.isAirlineRegistered(Airline_5); 
+    console.log("Fifth airline registration status 1: " + result5_1);    
+    assert.equal(result5_1, false, "Register attempt  of fifth airline with only one reco");
+
+    await config.flightSuretyApp.registerAirline(Airline_5, {from: Airline_2, value : reg_fee});
+    let result5_2 = await config.flightSuretyApp.isAirlineRegistered(Airline_5); 
+    console.log("Fifth airline registration status 2: " + result5_2);    
+    assert.equal(result5_2, true, "Register attempt  of fifth airline with 50% reco");
+
+/**/
+  });  
+
 });
+

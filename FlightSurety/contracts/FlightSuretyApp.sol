@@ -24,6 +24,8 @@ contract FlightSuretyApp {
     uint8 private constant STATUS_CODE_LATE_TECHNICAL = 40;
     uint8 private constant STATUS_CODE_LATE_OTHER = 50;
 
+    uint  private constant AIRLINE_REGISTRATION_FEE = 10 ether;
+
     address private contractOwner;          // Account used to deploy contract
 
     struct Flight {
@@ -40,7 +42,32 @@ contract FlightSuretyApp {
     //Prj8: Add reference to for multiparty concensus
     address[] multiCallsflightReg = new address[](0);
     address[] multiCallsModeChange = new address[](0);
-    uint8 private constant MIN_SUPPORT = 3;
+
+    address payable datacontractaddress;
+    /********************************************************************************************/
+    /*                                       PRJ-8 events                                       */
+    /********************************************************************************************/
+    event evntDebugBool(bool bvar);
+    event evntDebuguint(uint uintvar);
+    event evntDebuguint16(uint16 uint16var);
+    uint  unitTestvar1;
+    bool  bTestVar2;
+    function TestVar1()
+                            public
+                            view
+                            returns(uint)
+    {
+        return unitTestvar1;
+    }
+    function TestVar2()
+                            public
+                            view
+                            returns(bool)
+    {
+        return bTestVar2;
+    }
+
+
     /********************************************************************************************/
     /*                                       FUNCTION MODIFIERS                                 */
     /********************************************************************************************/
@@ -56,9 +83,14 @@ contract FlightSuretyApp {
     modifier requireIsOperational()
     {
          // Modify to call data contract's status
-        bool currOperational = flightsuretydata.dc_isOperational();
-        require(currOperational = true, "App Contract is currently not operational");
+        require(flightsuretydata.dc_isOperational() ==  true, "App Contract is currently not operational");
         _;  // All modifiers require an "_" which indicates where the function body will be added
+    }
+
+    // Define a modifier that checks if the paid amount is sufficient to cover the price
+    modifier paidEnough(uint _price) {
+        require(msg.value >= _price, "Registration amount is not sufficient");
+        _;
     }
 
     /**
@@ -80,11 +112,12 @@ contract FlightSuretyApp {
     */
     constructor
                                 (
-                                    address DataContractAddress
+                                    address payable DataContractAddress
                                 )
                                 public
     {
         contractOwner = msg.sender;
+        datacontractaddress = DataContractAddress;
         flightsuretydata = FlightSuretyData(DataContractAddress);
     }
 
@@ -94,10 +127,19 @@ contract FlightSuretyApp {
     //Prj - 8 : get operational info from data contract
     function isOperational()
                             public
-                            view
-                            returns(bool)
+                            returns(bool opstatus)
     {
         return flightsuretydata.dc_isOperational();  // Modify to call data contract's status
+    }
+    function isAirlineRegistered(
+                           address airlineAddress
+                       )
+                           public
+                           view
+                           requireIsOperational
+                           returns(bool regstatus)
+    {
+        return flightsuretydata.dc_isAirlineRegistered(airlineAddress);
     }
 
     /********************************************************************************************/
@@ -108,34 +150,52 @@ contract FlightSuretyApp {
     * @dev Add an airline to the registration queue
     * Prj 8 : - to be called from Daaap
     */
+
     function registerAirline
                             (
                                 address newAirLineAddress
                             )
                             public
+                            payable
                             requireIsOperational
-  //                        pure
+                            paidEnough(AIRLINE_REGISTRATION_FEE)
                             returns(bool success, uint256 votes)
     {
-        uint16 airlineCount = flightsuretydata.dc_getAirLineAcount();
+        unitTestvar1 = 0;
+        if (flightsuretydata.dc_isAirlineRegistered(newAirLineAddress) == true)
+        {
+            return(true, 0) ; // airline already registered, don't waste gas
+        }
+        uint256 airlineCount = flightsuretydata.dc_getAirLineCount();
+        //Funding base contract for registration
+        datacontractaddress.transfer(AIRLINE_REGISTRATION_FEE);
+        //if (true==true){return (true,1 );}
+        unitTestvar1 = 1;
         bool varConsensus = false;
         if (airlineCount < 4)
              {
-               flightsuretydata.dc_registerairline(newAirLineAddress);
-               return(true, airlineCount);
+               unitTestvar1 = 2;
+               bool result = flightsuretydata.dc_registerairline(newAirLineAddress);
+               return(result, airlineCount);
              }
         else {
-              varConsensus = isConcensus(multiCallsflightReg);
+              uint256 support = airlineCount.div(2);
+              unitTestvar1 = 3;
+              varConsensus = isConcensus(multiCallsflightReg, support);
+              votes = multiCallsflightReg.length;
               if (varConsensus) {
+                    unitTestvar1 = 4;
                     multiCallsflightReg = new address[](0);
                     flightsuretydata.dc_registerairline(newAirLineAddress);
-                    return(true, airlineCount);
-              }
+                    return(true, votes);
+                }
               else{
-                    return(false, airlineCount);
-              }
-            }
+                    unitTestvar1 = 5;
+                    return(false, votes);
+                }
+             }
     }
+
     function setOperatingStatus
                             (
                                 bool mode
@@ -152,13 +212,14 @@ contract FlightSuretyApp {
                             private
     {
         bool varConsensus = false;
-        uint16 airlineCount = flightsuretydata.dc_getAirLineAcount();
+        uint256 airlineCount = flightsuretydata.dc_getAirLineCount();
         if (airlineCount < 4)
              {
                flightsuretydata.dc_setOperatingStatus(mode,msg.sender);
              }
         else {
-              varConsensus = isConcensus(multiCallsModeChange);
+              uint256 support = airlineCount.div(2);
+              varConsensus = isConcensus(multiCallsModeChange, support);
               if (varConsensus) {
                     multiCallsModeChange = new address[](0);
                     flightsuretydata.dc_setOperatingStatus(mode,msg.sender);
@@ -167,7 +228,7 @@ contract FlightSuretyApp {
     }
 
     function isConcensus
-              (address[] storage multiCalls) private
+              (address[] storage multiCalls, uint256 support) private
                returns (bool consensusOk)
                {
                consensusOk = false;
@@ -181,7 +242,7 @@ contract FlightSuretyApp {
                }
                require(!isDuplicate, "Caller has already called this function.");
                multiCalls.push(msg.sender);
-               if (multiCalls.length >= MIN_SUPPORT) {
+               if (multiCalls.length >= support) {
                    consensusOk = true;
                }
                return consensusOk;
@@ -419,11 +480,10 @@ contract FlightSuretyData{
                                 address airlineaddr
                             )
                             external
-                            pure
                             returns(bool success)
     {
     }
-    function dc_getAirLineAcount
+    function dc_getAirLineCount
                             (
                             )
                             external
@@ -433,7 +493,7 @@ contract FlightSuretyData{
     }
     function dc_isOperational()
                             public
-                            pure
+                            view
                             returns(bool)
     {
     }
@@ -443,6 +503,15 @@ contract FlightSuretyData{
                                 address callerAddress
                             )
                             external
+    {
+    }
+    function dc_isAirlineRegistered
+                            (
+                                address airelineaddr
+                            )
+                            external
+                            view
+                            returns(bool)
     {
     }
 }
