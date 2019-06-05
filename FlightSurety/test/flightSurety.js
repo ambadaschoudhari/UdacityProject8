@@ -13,12 +13,12 @@ contract('Flight Surety Tests', async (accounts) => {
   /****************************************************************************************/
   /* Operations and Settings                                                              */
   /****************************************************************************************/
-  /*
+  
   it(`Case 1: (multiparty) has correct initial isOperational() value`, async function () {
 
     // Get operating status
     let status = await config.flightSuretyApp.isOperational.call();
-    assert.equal(status, true, "Incorrect initial operating status value");
+    assert.equal(status, true, "TC1: Incorrect initial operating status value");
 
   });
 
@@ -31,10 +31,10 @@ contract('Flight Surety Tests', async (accounts) => {
          await config.flightSuretyApp.setOperatingStatus(false, { from: accounts[1] });
        }
       catch(e) {
-          console.log("Test case 2 Error : "+e);
+          //console.log("Test case 2 Error : "+e);
           accessDenied = true;
       }
-      assert.equal(accessDenied, true, "Access not restricted to Contract Owner");
+      assert.equal(accessDenied, true, "TC2: Access not restricted to Contract Owner");
             
   });
 
@@ -54,7 +54,7 @@ contract('Flight Surety Tests', async (accounts) => {
       }
       assert.equal(accessDenied, false, "Access not restricted to Contract Owner");
       let status = await config.flightSuretyApp.isOperational.call();
-      assert.equal(status, false, "Test case 3: Operating status did not get changed");
+      assert.equal(status, false, "TC3: Operating status did not get changed");
   });
 
   it(`Case 4: (multiparty) can block access to functions using requireIsOperational when operating status is false`, async function () {
@@ -71,12 +71,12 @@ contract('Flight Surety Tests', async (accounts) => {
           reverted = true;
           console.log("Test case 4 Error : "+e);
       }
-      assert.equal(reverted, true, "Access not blocked for requireIsOperational");      
+      assert.equal(reverted, true, "TC4: Access not blocked for requireIsOperational");      
 
       // Set it back for other tests to work
       await config.flightSuretyApp.setOperatingStatus(true), {from: accounts[0]};
       let status = await config.flightSuretyApp.isOperational.call();
-      assert.equal(status, true, "Test case 4: Operating status is not set to true");
+      assert.equal(status, true, "TC4: Operating status is not set to true");
 
   });
 
@@ -95,7 +95,7 @@ contract('Flight Surety Tests', async (accounts) => {
     }
     let result = await config.flightSuretyApp.isAirlineRegistered(newAirline); 
 
-    assert.equal(result, false, "Airline should not be able to register another airline if it hasn't provided funding");
+    assert.equal(result, false, "TC5: Airline should not be able to register another airline if it hasn't provided funding");
 
   });
 
@@ -112,14 +112,14 @@ contract('Flight Surety Tests', async (accounts) => {
         await config.flightSuretyApp.registerAirline(newAirline, {from: config.firstAirline, value : reg_fee});
     }
     catch(e) {
-      console.log("Test case 5 Error : "+e);
+      console.log("Test case 6 Error : "+e);
     }
     let result = await config.flightSuretyApp.isAirlineRegistered(newAirline); 
 
-    assert.equal(result, false, "Airline should not be able to register another airline if it hasn't provided funding");
+    assert.equal(result, false, " TC6: Airline should not be able to register another airline if it hasn't provided funding");
 
   });
- 
+
   it('Case 7: First 4 airlines can be registered without consensus & 5th with consensus', async () => {
     
     // ARRANGE
@@ -136,29 +136,28 @@ contract('Flight Surety Tests', async (accounts) => {
     console.log("Second airline registration status : " + result2);
     //let testvar1 = await config.flightSuretyApp.TestVar1(); 
     //console.log("Test Var Value : " + testvar1);    
-    assert.equal(result2, true, "Register second airline without concenus");
+    assert.equal(result2, true, "TC7: Register second airline without concenus");
 
     //registered airline is able to register another airline
     await config.flightSuretyApp.registerAirline(Airline_3, {from: Airline_2, value : reg_fee});
     let result3 = await config.flightSuretyApp.isAirlineRegistered(Airline_3); 
-    assert.equal(result3, true, "Register third airline without concenus");
+    assert.equal(result3, true, "TC7: Register third airline without concenus");
     console.log("Third airline registration status : " + result3);    
-    console.log("Third airline registration status" + result3);    
 
     await config.flightSuretyApp.registerAirline(Airline_4, {from: Airline_3, value : reg_fee});
     let result4 = await config.flightSuretyApp.isAirlineRegistered(Airline_4); 
     console.log("Fourth airline registration status : " + result4);    
-    assert.equal(result4, true, "Register fourth airline without concenus");
+    assert.equal(result4, true, "TC7: Register fourth airline without concenus");
 
     await config.flightSuretyApp.registerAirline(Airline_5, {from: Airline_3, value : reg_fee});
     let result5_1 = await config.flightSuretyApp.isAirlineRegistered(Airline_5); 
     console.log("Fifth airline registration status 1: " + result5_1);    
-    assert.equal(result5_1, false, "Register attempt  of fifth airline with only one reco");
+    assert.equal(result5_1, false, "TC7: Register attempt  of fifth airline with only one reco");
 
     await config.flightSuretyApp.registerAirline(Airline_5, {from: Airline_2, value : reg_fee});
     let result5_2 = await config.flightSuretyApp.isAirlineRegistered(Airline_5); 
     console.log("Fifth airline registration status 2: " + result5_2);    
-    assert.equal(result5_2, true, "Register attempt  of fifth airline with 50% reco");
+    assert.equal(result5_2, true, "TC7: Register attempt  of fifth airline with 50% reco");
 
 
   });  
@@ -166,22 +165,35 @@ contract('Flight Surety Tests', async (accounts) => {
   it('Case 8: User is allowed to buy insurance & Refunded', async () => {
     
     // ARRANGE
-    let User = accounts[6];
-    console.log("User to buy contract:" + User);
+    let User6 = accounts[6];
+    console.log("User to buy contract:" + User6);
     let reg_fee =  web3.utils.toWei("2", "ether");
-    await config.flightSuretyApp.buy('AI--0747--:19:30','A-34', {from: User, value : reg_fee});
-    let claimStatus = "None";   
-    claimStatus = await config.flightSuretyApp.getClaimStatus(User);
-    assert.equal(claimStatus, "Insured", "Passenger Shall be able to buy insurance");
+    await config.flightSuretyApp.buy('AI--6666--:19:30','A-34', {from: User6, value : reg_fee});
+    let claimStatus6 = "None";   
+    claimStatus6 = await config.flightSuretyApp.getClaimStatus(User6);
+    assert.equal(claimStatus6, "Insured", "TC8: Passenger 6 Shall be able to buy insurance");
+
+    let User7 = accounts[7];
+    await config.flightSuretyApp.buy('AI--7777--:19:30','A-34', {from: User7, value : reg_fee});
+    let claimStatus7 = "None";   
+    claimStatus7 = await config.flightSuretyApp.getClaimStatus(User7);
+    assert.equal(claimStatus7, "Insured", "TC8: Passenger 7 Shall be able to buy insurance");
+
+    let User8 = accounts[8];
+    await config.flightSuretyApp.buy('AI--8888--:19:30','A-34', {from: User8, value : reg_fee});
+    let claimStatus8 = "None";   
+    claimStatus8 = await config.flightSuretyApp.getClaimStatus(User8);
+    assert.equal(claimStatus8, "Insured", "TC8: Passenger 8 Shall be able to buy insurance");
+
     //Below test requires flightSuretyApp.creditInsurees to be modified 
     //to make it a public function
-    await config.flightSuretyApp.creditInsurees('AI--0747--:19:30');
-    claimStatus = await config.flightSuretyApp.getClaimStatus(User);
-    assert.equal(claimStatus, "Settled", "Passenger Shall be paid Claim");
+    await config.flightSuretyApp.creditInsurees('AI--6666--:19:30');
+    claimStatus = await config.flightSuretyApp.getClaimStatus(User6);
+    assert.equal(claimStatus, "Settled", "TC8: Passenger Shall be paid Claim");
 
 
   });  
-/**/
+
   
 
 });

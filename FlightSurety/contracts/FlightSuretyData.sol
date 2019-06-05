@@ -113,7 +113,7 @@ contract FlightSuretyData {
     function dc_isOperational()
                             public
                             view
-                            requireAuthorizedCaller
+//                            requireAuthorizedCaller
                             returns(bool)
     {
         return operational;

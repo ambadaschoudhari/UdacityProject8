@@ -25,7 +25,7 @@ To use the dapp:
 
 To view dapp:
 
-`http://localhost:8000`
+`http://localhost:8080`
 
 ## Develop Server
 
@@ -38,6 +38,27 @@ To build dapp for prod:
 `npm run dapp:prod`
 
 Deploy the contents of the ./dapp folder
+
+Test Results:
+1. Separation of Concerns
+   a. Implemented data and app contract; 
+   b. Business logic is mostly in app contract
+   c. Storage and information is mostly in data contract [Data Persistenace]
+   d. Security is handled by allowing only app contrat connect to datacontract - registration at deployment
+2. Airlines
+   a. Registration at time of testing [Deployment does take care of authorized user]
+   b. Only existing airlines are allowed to register new airlines
+   c. Consensus implemented
+3. Passengers
+   a. Passensgers can buy insurance, Implemented and tested 
+   b. Repayment can tested for one of the insured tickets
+4. Oracles
+   a. Implemnted functions and tested functionality from query submitted for dapp
+   b. Testing completed from oracles.js
+5. General
+   a. IsOperational Implemented
+   b. Requirement statements are implemented
+   c. New test cases, data structures and code added.
 
 
 ## Resources

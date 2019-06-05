@@ -40,7 +40,7 @@ contract FlightSuretyApp {
 
     //Prj8: Add reference to data contract in app contract
     FlightSuretyData flightsuretydata;
-    
+
     //Prj8: Add reference to for multiparty concensus
     address[] multiCallsflightReg = new address[](0);
     address[] multiCallsModeChange = new address[](0);
@@ -56,6 +56,8 @@ contract FlightSuretyApp {
     event evntDebuguint16(uint16 uint16var);
     uint  unitTestvar1;
     bool  bTestVar2;
+    address addrTestVar3;
+    
     function TestVar1()
                             public
                             view
@@ -87,7 +89,7 @@ contract FlightSuretyApp {
     modifier requireIsOperational()
     {
          // Modify to call data contract's status
-        require(flightsuretydata.dc_isOperational() ==  true, "App Contract is currently not operational");
+        require(flightsuretydata.dc_isOperational() == true, "App Contract is currently not operational");
         _;  // All modifiers require an "_" which indicates where the function body will be added
     }
 
@@ -253,12 +255,12 @@ contract FlightSuretyApp {
                }
                return consensusOk;
     }
-   
+
    /**
     * @dev Register a future flight for insuring.
     * Prj 8 : - to be called from Daap
     */
-    
+
     function registerFlight
                                 (
                                     string memory flightID,
@@ -267,7 +269,8 @@ contract FlightSuretyApp {
                                 public
                             requireIsOperational
     {
-       require(flightsuretydata.dc_isAirlineRegistered(airlineAddress), "Airline shall be part of consortium to register flight");                     
+       require(flightsuretydata.dc_isAirlineRegistered(airlineAddress),
+        "Airline shall be part of consortium to register flight");
        flightList[flightID] = airlineAddress;
        flightArray.push(flightID);
     }
@@ -311,14 +314,14 @@ contract FlightSuretyApp {
                                 internal
                                 requireIsOperational
     {
-       require(flightsuretydata.dc_isAirlineRegistered(airline), "Airline shall be part of consortium");
+       require(flightsuretydata.dc_isAirlineRegistered(airline), "App:Airline shall be part of consortium");
        //Flight surety flights
        // fetchFlightStatus(airline,flightID);
        if (statusCode == STATUS_CODE_LATE_AIRLINE)
        {
           flightsuretydata.dc_creditInsurees(flightID);
        }
-       
+
     }
     // test function
     function creditInsurees
@@ -340,12 +343,14 @@ contract FlightSuretyApp {
                           //  ,uint256 timestamp
                         )
                         external
+                        requireIsOperational
     {
         uint8 index = getRandomIndex(msg.sender);
 
         // Generate a unique key for storing the request
         //bytes32 key = keccak256(abi.encodePacked(index, airline, flight, timestamp));
-        bytes32 key = keccak256(abi.encodePacked(index, airline, flightID));
+        //bytes32 key = keccak256(abi.encodePacked(index, airline, flightID));
+        bytes32 key = keccak256(abi.encodePacked(index, flightID));
         oracleResponses[key] = ResponseInfo({
                                                 requester: msg.sender,
                                                 isOpen: true
@@ -409,6 +414,7 @@ contract FlightSuretyApp {
                             )
                             external
                             payable
+                            requireIsOperational
     {
         // Require registration fee
         require(msg.value >= REGISTRATION_FEE, "Registration fee is required");
@@ -426,6 +432,7 @@ contract FlightSuretyApp {
                             )
                             external
                             view
+                            requireIsOperational
                             returns( uint8[3] memory)
     {
         require(oracles[msg.sender].isRegistered, "Not registered as an oracle");
@@ -447,6 +454,7 @@ contract FlightSuretyApp {
                             uint8 statusCode
                         )
                         external
+                        requireIsOperational
     {
         require((oracles[msg.sender].indexes[0] == index) ||
         (oracles[msg.sender].indexes[1] == index) ||
@@ -454,7 +462,8 @@ contract FlightSuretyApp {
 
 
    //     bytes32 key = keccak256(abi.encodePacked(index, airline, flight, timestamp));
-        bytes32 key = keccak256(abi.encodePacked(index, airline, flightID));
+   //     bytes32 key = keccak256(abi.encodePacked(index, airline, flightID));
+        bytes32 key = keccak256(abi.encodePacked(index, flightID));
         require(oracleResponses[key].isOpen, "Flight or timestamp do not match oracle request");
 
         oracleResponses[key].responses[statusCode].push(msg.sender);
