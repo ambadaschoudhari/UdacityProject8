@@ -45,6 +45,8 @@ contract FlightSuretyApp {
     address[] multiCallsflightReg = new address[](0);
     address[] multiCallsModeChange = new address[](0);
 
+    mapping (string => address ) flightList;
+    string[] flightArray;
     address payable private datacontractaddress;
     /********************************************************************************************/
     /*                                       PRJ-8 events                                       */
@@ -256,18 +258,20 @@ contract FlightSuretyApp {
     * @dev Register a future flight for insuring.
     * Prj 8 : - to be called from Daap
     */
-    /*
+    
     function registerFlight
                                 (
-                                    bytes16 flightID,
+                                    string memory flightID,
                                     address airlineAddress
                                 )
                                 public
                             requireIsOperational
     {
-                    flightsuretydata.dc_registerflight(flightID,airlineAddress);
+       require(flightsuretydata.dc_isAirlineRegistered(airlineAddress), "Airline shall be part of consortium to register flight");                     
+       flightList[flightID] = airlineAddress;
+       flightArray.push(flightID);
     }
-*/
+
     function buy
                             (
                                 string memory flightID,
@@ -300,35 +304,55 @@ contract FlightSuretyApp {
     function processFlightStatus
                                 (
                                     address airline,
-                                    string memory flight,
-                                    uint256 timestamp,
+                                    string memory flightID,
+                               //     uint256 timestamp,
                                     uint8 statusCode
                                 )
                                 internal
-                                pure
+                                requireIsOperational
     {
+       require(flightsuretydata.dc_isAirlineRegistered(airline), "Airline shall be part of consortium");
+       //Flight surety flights
+       // fetchFlightStatus(airline,flightID);
+       if (statusCode == STATUS_CODE_LATE_AIRLINE)
+       {
+          flightsuretydata.dc_creditInsurees(flightID);
+       }
+       
     }
-
+    // test function
+    function creditInsurees
+                                (
+                                   string calldata flightID
+                                )
+                                //private after test is complete
+                                external ///while testing
+                                requireIsOperational
+    {
+         flightsuretydata.dc_creditInsurees(flightID);
+    }
 
     // Generate a request for oracles to fetch flight information
     function fetchFlightStatus
                         (
                             address airline,
-                            string calldata flight,
-                            uint256 timestamp
+                            string calldata flightID
+                          //  ,uint256 timestamp
                         )
                         external
     {
         uint8 index = getRandomIndex(msg.sender);
 
         // Generate a unique key for storing the request
-        bytes32 key = keccak256(abi.encodePacked(index, airline, flight, timestamp));
+        //bytes32 key = keccak256(abi.encodePacked(index, airline, flight, timestamp));
+        bytes32 key = keccak256(abi.encodePacked(index, airline, flightID));
         oracleResponses[key] = ResponseInfo({
                                                 requester: msg.sender,
                                                 isOpen: true
                                             });
 
-        emit OracleRequest(index, airline, flight, timestamp);
+        //emit OracleRequest(index, airline, flight, timestamp);
+        emit OracleRequest(index, airline, flightID);
     }
 
 
@@ -366,15 +390,18 @@ contract FlightSuretyApp {
     mapping(bytes32 => ResponseInfo) private oracleResponses;
 
     // Event fired each time an oracle submits a response
-    event FlightStatusInfo(address airline, string flight, uint256 timestamp, uint8 status);
+    //event FlightStatusInfo(address airline, string flight, uint256 timestamp, uint8 status);
 
-    event OracleReport(address airline, string flight, uint256 timestamp, uint8 status);
+    //event OracleReport(address airline, string flight, uint256 timestamp, uint8 status);
+    event FlightStatusInfo(address airline, string flightID, uint8 status);
+
+    event OracleReport(address airline, string flightID, uint8 status);
 
     // Event fired when flight status request is submitted
     // Oracles track this and if they have a matching index
     // they fetch data and submit a response
-    event OracleRequest(uint8 index, address airline, string flight, uint256 timestamp);
-
+    //event OracleRequest(uint8 index, address airline, string flight, uint256 timestamp);
+     event OracleRequest(uint8 index, address airline, string flightID);
 
     // Register an oracle with the contract
     function registerOracle
@@ -415,8 +442,8 @@ contract FlightSuretyApp {
                         (
                             uint8 index,
                             address airline,
-                            string calldata flight,
-                            uint256 timestamp,
+                            string calldata flightID,
+    //                        uint256 timestamp,
                             uint8 statusCode
                         )
                         external
@@ -426,20 +453,24 @@ contract FlightSuretyApp {
         (oracles[msg.sender].indexes[2] == index), "Index does not match oracle request");
 
 
-        bytes32 key = keccak256(abi.encodePacked(index, airline, flight, timestamp));
+   //     bytes32 key = keccak256(abi.encodePacked(index, airline, flight, timestamp));
+        bytes32 key = keccak256(abi.encodePacked(index, airline, flightID));
         require(oracleResponses[key].isOpen, "Flight or timestamp do not match oracle request");
 
         oracleResponses[key].responses[statusCode].push(msg.sender);
 
         // Information isn't considered verified until at least MIN_RESPONSES
         // oracles respond with the *** same *** information
-        emit OracleReport(airline, flight, timestamp, statusCode);
+        //emit OracleReport(airline, flight, timestamp, statusCode);
+        emit OracleReport(airline, flightID, statusCode);
         if (oracleResponses[key].responses[statusCode].length >= MIN_RESPONSES) {
 
-            emit FlightStatusInfo(airline, flight, timestamp, statusCode);
+            //emit FlightStatusInfo(airline, flight, timestamp, statusCode);
+            emit FlightStatusInfo(airline, flightID, statusCode);
 
             // Handle flight status as appropriate
-            processFlightStatus(airline, flight, timestamp, statusCode);
+     //       processFlightStatus(airline, flight, timestamp, statusCode);
+            processFlightStatus(airline, flightID, statusCode);
         }
     }
 
@@ -447,14 +478,15 @@ contract FlightSuretyApp {
     function getFlightKey
                         (
                             address airline,
-                            string  memory flight,
-                            uint256 timestamp
+                            string  memory flightID //,
+                            //uint256 timestamp
                         )
                         internal
                         pure
                         returns(bytes32)
     {
-        return keccak256(abi.encodePacked(airline, flight, timestamp));
+        //return keccak256(abi.encodePacked(airline, flight, timestamp));
+        return keccak256(abi.encodePacked(airline, flightID));
     }
 
     // Returns array of three non-duplicating integers from 0-9
@@ -582,5 +614,12 @@ contract FlightSuretyData{
                             returns(string memory claimstaus)
     {
     }
+    function dc_creditInsurees
+                                (
+                                   string calldata flightID
+                                )
+                                external
+    {
 
+    }
 }

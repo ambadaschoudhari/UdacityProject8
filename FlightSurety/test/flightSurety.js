@@ -119,7 +119,7 @@ contract('Flight Surety Tests', async (accounts) => {
     assert.equal(result, false, "Airline should not be able to register another airline if it hasn't provided funding");
 
   });
-  */
+ 
   it('Case 7: First 4 airlines can be registered without consensus & 5th with consensus', async () => {
     
     // ARRANGE
@@ -160,10 +160,10 @@ contract('Flight Surety Tests', async (accounts) => {
     console.log("Fifth airline registration status 2: " + result5_2);    
     assert.equal(result5_2, true, "Register attempt  of fifth airline with 50% reco");
 
-/**/
+
   });  
 
-  it('Case 8: User is allowed to buy insurance', async () => {
+  it('Case 8: User is allowed to buy insurance & Refunded', async () => {
     
     // ARRANGE
     let User = accounts[6];
@@ -173,15 +173,15 @@ contract('Flight Surety Tests', async (accounts) => {
     let claimStatus = "None";   
     claimStatus = await config.flightSuretyApp.getClaimStatus(User);
     assert.equal(claimStatus, "Insured", "Passenger Shall be able to buy insurance");
-    //Below test requires flightSuretyData.creditInsurees to be modified 
-    //in such a way that requireAuthorizedCaller is commented- for unit testing only
-    await config.flightSuretyData.creditInsurees('AI--0747--:19:30');
+    //Below test requires flightSuretyApp.creditInsurees to be modified 
+    //to make it a public function
+    await config.flightSuretyApp.creditInsurees('AI--0747--:19:30');
     claimStatus = await config.flightSuretyApp.getClaimStatus(User);
     assert.equal(claimStatus, "Settled", "Passenger Shall be paid Claim");
 
-/**/
-  });  
 
+  });  
+/**/
   
 
 });

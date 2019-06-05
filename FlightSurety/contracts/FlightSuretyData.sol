@@ -280,7 +280,7 @@ contract FlightSuretyData {
     /**
      *  @dev Credits payouts to insurees
     */
-    function creditInsurees
+    function dc_creditInsurees
                                 (
                                    string calldata flightID
                                 )
