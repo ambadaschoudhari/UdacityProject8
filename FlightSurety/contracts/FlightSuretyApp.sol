@@ -19,12 +19,13 @@ contract FlightSuretyApp {
     // Flight status codees
     uint8 private constant STATUS_CODE_UNKNOWN = 0;
     uint8 private constant STATUS_CODE_ON_TIME = 10;
-    uint8 private constant STATUS_CODE_LATE_AIRLINE = 20;
+    uint8 private constant STATUS_CODE_LATE_AIRLINE = 20; //Relevant
     uint8 private constant STATUS_CODE_LATE_WEATHER = 30;
     uint8 private constant STATUS_CODE_LATE_TECHNICAL = 40;
     uint8 private constant STATUS_CODE_LATE_OTHER = 50;
 
     uint  private constant AIRLINE_REGISTRATION_FEE = 10 ether;
+    uint  private constant AIRLINE_INSURANCE_FEE = 1 ether;
 
     address private contractOwner;          // Account used to deploy contract
 
@@ -36,6 +37,7 @@ contract FlightSuretyApp {
     }
     mapping(bytes32 => Flight) private flights;
 
+
     //Prj8: Add reference to data contract in app contract
     FlightSuretyData flightsuretydata;
     
@@ -43,7 +45,7 @@ contract FlightSuretyApp {
     address[] multiCallsflightReg = new address[](0);
     address[] multiCallsModeChange = new address[](0);
 
-    address payable datacontractaddress;
+    address payable private datacontractaddress;
     /********************************************************************************************/
     /*                                       PRJ-8 events                                       */
     /********************************************************************************************/
@@ -89,7 +91,7 @@ contract FlightSuretyApp {
 
     // Define a modifier that checks if the paid amount is sufficient to cover the price
     modifier paidEnough(uint _price) {
-        require(msg.value >= _price, "Registration amount is not sufficient");
+        require(msg.value >= _price, "Registration/Fee amount is not sufficient");
         _;
     }
 
@@ -117,8 +119,8 @@ contract FlightSuretyApp {
                                 public
     {
         contractOwner = msg.sender;
-        datacontractaddress = DataContractAddress;
         flightsuretydata = FlightSuretyData(DataContractAddress);
+        datacontractaddress = DataContractAddress;
     }
 
     /********************************************************************************************/
@@ -127,6 +129,7 @@ contract FlightSuretyApp {
     //Prj - 8 : get operational info from data contract
     function isOperational()
                             public
+                            view
                             returns(bool opstatus)
     {
         return flightsuretydata.dc_isOperational();  // Modify to call data contract's status
@@ -168,6 +171,7 @@ contract FlightSuretyApp {
         }
         uint256 airlineCount = flightsuretydata.dc_getAirLineCount();
         //Funding base contract for registration
+        datacontractaddress = flightsuretydata.dc_getContractAddress();
         datacontractaddress.transfer(AIRLINE_REGISTRATION_FEE);
         //if (true==true){return (true,1 );}
         unitTestvar1 = 1;
@@ -252,14 +256,42 @@ contract FlightSuretyApp {
     * @dev Register a future flight for insuring.
     * Prj 8 : - to be called from Daap
     */
+    /*
     function registerFlight
                                 (
+                                    bytes16 flightID,
+                                    address airlineAddress
                                 )
-                                external
-                                pure
+                                public
+                            requireIsOperational
     {
-      //  flightsuretydata.registerflight();
+                    flightsuretydata.dc_registerflight(flightID,airlineAddress);
     }
+*/
+    function buy
+                            (
+                                string memory flightID,
+                                string memory ticketNo
+                            )
+                            public
+                            payable
+                            requireIsOperational
+                            paidEnough(AIRLINE_INSURANCE_FEE)
+    {
+           datacontractaddress.transfer(AIRLINE_INSURANCE_FEE);
+           flightsuretydata.dc_buy(flightID,msg.sender,ticketNo);
+    }
+   function getClaimStatus
+                            (
+                                 address passengerAccount
+                            )
+                            public
+                            view
+                            returns(string memory claimstaus)
+    {
+        return flightsuretydata.dc_getClaimStatus(passengerAccount);
+    }
+
 
    /**
     * @dev Called after oracle has updated flight status
@@ -514,4 +546,41 @@ contract FlightSuretyData{
                             returns(bool)
     {
     }
+    function dc_getContractAddress
+                            (
+                            )
+                            external
+                            view
+                            returns (address payable myAddress)
+    {
+    }
+
+    function dc_registerFlight
+                                (
+                                    bytes16 flightID,
+                                    address airlineAddress
+                                )
+                                external
+    {
+    }
+    function dc_buy
+                            (
+                                string calldata flightID,
+                                address payable passengerAccount,
+                                string calldata TicketNo
+                            )
+                            external
+                            payable
+    {
+    }
+   function dc_getClaimStatus
+                            (
+                                 address passengerAccount
+                            )
+                            external
+                            view
+                            returns(string memory claimstaus)
+    {
+    }
+
 }

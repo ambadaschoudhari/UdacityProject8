@@ -120,7 +120,7 @@ contract('Flight Surety Tests', async (accounts) => {
 
   });
   */
-  it('Case 7: First four airlines can be registered without consensus ', async () => {
+  it('Case 7: First 4 airlines can be registered without consensus & 5th with consensus', async () => {
     
     // ARRANGE
     let Airline_2 = accounts[2];
@@ -162,6 +162,27 @@ contract('Flight Surety Tests', async (accounts) => {
 
 /**/
   });  
+
+  it('Case 8: User is allowed to buy insurance', async () => {
+    
+    // ARRANGE
+    let User = accounts[6];
+    console.log("User to buy contract:" + User);
+    let reg_fee =  web3.utils.toWei("2", "ether");
+    await config.flightSuretyApp.buy('AI--0747--:19:30','A-34', {from: User, value : reg_fee});
+    let claimStatus = "None";   
+    claimStatus = await config.flightSuretyApp.getClaimStatus(User);
+    assert.equal(claimStatus, "Insured", "Passenger Shall be able to buy insurance");
+    //Below test requires flightSuretyData.creditInsurees to be modified 
+    //in such a way that requireAuthorizedCaller is commented- for unit testing only
+    await config.flightSuretyData.creditInsurees('AI--0747--:19:30');
+    claimStatus = await config.flightSuretyApp.getClaimStatus(User);
+    assert.equal(claimStatus, "Settled", "Passenger Shall be paid Claim");
+
+/**/
+  });  
+
+  
 
 });
 

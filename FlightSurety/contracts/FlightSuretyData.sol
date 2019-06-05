@@ -13,12 +13,24 @@ contract FlightSuretyData {
     bool private operational = true;      // Blocks all state changes throughout the contract if false
     //Prj - 8 Add code for registred airlines
     address[] private registredAirlines = new address[](0);
+    
+    struct InsuredTickets{
+        address payable passengerAccount;
+        string TicketNo;
+    }
+    
+    mapping (string => InsuredTickets[]) insuredFlights;  //Flight ID => Insured
+    //string [] private flightlist = new string("");
+    // seat No ==> Airline ID, flight ID, time, SeatNo, Insured? in future, for now do it in node
+    mapping (address => string) private claimStatus;//only one insurance allowed at a time for a passenger
+
     //Prj - 8 Add code for to limit authorized callers
     mapping (address => bool) authorizedContracts;
-    uint private   currentFund;// = 0;
 
     event evntDebugBool(bool bvar);
     event evntDebuguint(uint uintvar);
+    event evntTktInsured(address passengerAccount);
+    event evntClaimPaid(string flightID);
 
     uint  unitTestvar1;
     bool  bTestVar2;
@@ -51,7 +63,6 @@ contract FlightSuretyData {
                                 public
     {
         contractOwner = msg.sender;
-        currentFund = 0;
         //register first airline
         registredAirlines.push(msg.sender);
     }
@@ -132,7 +143,17 @@ contract FlightSuretyData {
     {
         operational = mode;
     }
-
+    //Prj-8 share data contract address
+    function dc_getContractAddress
+                            (
+                            )
+                            external
+                            view
+                            requireAuthorizedCaller
+                            returns (address payable myAddress)
+    {
+        return (address(this));
+    }
     /********************************************************************************************/
     /*                                     SMART CONTRACT FUNCTIONS                             */
     /********************************************************************************************/
@@ -181,6 +202,19 @@ contract FlightSuretyData {
            return(IsRegistered);
     }
 
+   function dc_getClaimStatus
+                            (
+                                 address passengerAccount
+                            )
+                            external
+                            requireIsOperational
+                            requireAuthorizedCaller
+                            view
+                            returns(string memory claimstaus)
+    {
+        return (claimStatus[passengerAccount]);
+    }
+
     function dc_getAirLineCount
                             (
                             )
@@ -192,6 +226,7 @@ contract FlightSuretyData {
     {
         return (uint16(registredAirlines.length));
     }
+
     function authorizeCaller(address allowedCallerAddress)
                            public
                            requireIsOperational
@@ -199,28 +234,69 @@ contract FlightSuretyData {
     {
         authorizedContracts[allowedCallerAddress] = true;
     }
+    // Unused function to be used later
+    /*
+    function dc_registerFlight
+                                (
+                                    bytes16 flightID,
+                                    address airlineAddress
+                                )
+                                public
+                                requireIsOperational
+    {
+           require(dc_isAirlineRegistered(airlineAddress), "Airline must be registerd");
+           InsuredTickets memory insuredTkt;
+           insuredTkt.passengerAccount = address(0);
+           insuredTkt.TicketNo = 0x0000000000000000;
+           insuredFlights[flightID].push(insuredTkt);
+                    
+    }
+*/
    /**
     * @dev Buy insurance for a flight
     *
     */
-    function buy
+    function dc_buy
                             (
+                                string calldata flightID,
+                                address payable passengerAccount,
+                                string calldata ticketNo
                             )
                             external
                             payable
+                            requireIsOperational
+                            requireAuthorizedCaller
     {
-
+           InsuredTickets memory insuredTkt;
+           insuredTkt.passengerAccount = passengerAccount;
+           insuredTkt.TicketNo = ticketNo;
+           insuredFlights[flightID].push(insuredTkt);
+           claimStatus[passengerAccount] = 'Insured';
+           emit evntTktInsured(passengerAccount);
     }
+
+
 
     /**
      *  @dev Credits payouts to insurees
     */
     function creditInsurees
                                 (
+                                   string calldata flightID
                                 )
                                 external
-                                pure
+                                requireIsOperational
+                                requireAuthorizedCaller
     {
+        for (uint c = 0; c < insuredFlights[flightID].length; c++ )
+        {
+             uint PAYMENT_AMOUNT = 1.5 ether;
+             address payable passengeraccount = insuredFlights[flightID][c].passengerAccount;
+             passengeraccount.transfer(PAYMENT_AMOUNT);
+             claimStatus[passengeraccount] = 'Settled';
+        }
+        delete insuredFlights[flightID];
+        emit evntClaimPaid(flightID);
     }
 
     /**
@@ -246,7 +322,7 @@ contract FlightSuretyData {
                             public
                             payable
     {
-         require(msg.value >= 10 ether,"Registration fee has to me minimum 10 ethers");
+         require(msg.value >= 1 ether,"Registration/fee has to me minimum 1 ether");
          //need to check on how to use safemath
          //currentFund = uint(msg.value);
          emit evntDebuguint(uint(msg.value));
