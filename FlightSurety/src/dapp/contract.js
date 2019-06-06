@@ -56,4 +56,23 @@ export default class Contract {
                 callback(error, payload);
             });
     }
+
+    buyInsurance(flightID, seatnumber,price,callback) {
+
+        let self = this;
+        let passengerAddr ="0xbd8Be1884f5b7bccCf567c37e2844B82499CCE65"; 
+        let payload = {
+            airline: self.airlines[0],
+            flightID: flightID,
+            seatNo:  seatnumber,
+            Price:  price
+        } 
+        return;
+       /* self.flightSuretyApp.methods
+//            .fetchFlightStatus(payload.airline, payload.flight, payload.timestamp)
+              .buy(payload.airline, payload.flightID,payload.seatNo)
+            .send({ from:passengerAddr, value:payload.Price}, (error, result) => {
+                callback(error, payload);
+            });*/
+    }    
 }

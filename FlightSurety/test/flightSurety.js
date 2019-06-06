@@ -166,28 +166,30 @@ contract('Flight Surety Tests', async (accounts) => {
     
     // ARRANGE
     let User6 = accounts[6];
+    let Airline_2 = accounts[2];
+
     console.log("User to buy contract:" + User6);
     let reg_fee =  web3.utils.toWei("2", "ether");
-    await config.flightSuretyApp.buy('AI--6666--:19:30','A-34', {from: User6, value : reg_fee});
+    await config.flightSuretyApp.buy(Airline_2,'AI--6666--:16:30','A-34', {from: User6, value : reg_fee});
     let claimStatus6 = "None";   
     claimStatus6 = await config.flightSuretyApp.getClaimStatus(User6);
     assert.equal(claimStatus6, "Insured", "TC8: Passenger 6 Shall be able to buy insurance");
 
     let User7 = accounts[7];
-    await config.flightSuretyApp.buy('AI--7777--:19:30','A-34', {from: User7, value : reg_fee});
+    await config.flightSuretyApp.buy(Airline_2,'AI--7777--:17:30','A-34', {from: User7, value : reg_fee});
     let claimStatus7 = "None";   
     claimStatus7 = await config.flightSuretyApp.getClaimStatus(User7);
     assert.equal(claimStatus7, "Insured", "TC8: Passenger 7 Shall be able to buy insurance");
 
     let User8 = accounts[8];
-    await config.flightSuretyApp.buy('AI--8888--:19:30','A-34', {from: User8, value : reg_fee});
+    await config.flightSuretyApp.buy(Airline_2,'AI--8888--:18:30','A-34', {from: User8, value : reg_fee});
     let claimStatus8 = "None";   
     claimStatus8 = await config.flightSuretyApp.getClaimStatus(User8);
     assert.equal(claimStatus8, "Insured", "TC8: Passenger 8 Shall be able to buy insurance");
 
     //Below test requires flightSuretyApp.creditInsurees to be modified 
     //to make it a public function
-    await config.flightSuretyApp.creditInsurees('AI--6666--:19:30');
+    await config.flightSuretyApp.creditInsurees('AI--6666--:16:30');
     claimStatus = await config.flightSuretyApp.getClaimStatus(User6);
     assert.equal(claimStatus, "Settled", "TC8: Passenger Shall be paid Claim");
 

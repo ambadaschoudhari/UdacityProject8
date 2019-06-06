@@ -24,6 +24,7 @@ contract FlightSuretyData {
     // seat No ==> Airline ID, flight ID, time, SeatNo, Insured? in future, for now do it in node
     mapping (address => string) private claimStatus;//only one insurance allowed at a time for a passenger
 
+    mapping (address => uint256) private passengerfund; 
     //Prj - 8 Add code for to limit authorized callers
     mapping (address => bool) authorizedContracts;
 
@@ -31,6 +32,7 @@ contract FlightSuretyData {
     event evntDebuguint(uint uintvar);
     event evntTktInsured(address passengerAccount);
     event evntClaimPaid(string flightID);
+    event evntClaimWithdrawn(address paccount);
 
     uint  unitTestvar1;
     bool  bTestVar2;
@@ -292,11 +294,23 @@ contract FlightSuretyData {
         {
              uint PAYMENT_AMOUNT = 1.5 ether;
              address payable passengeraccount = insuredFlights[flightID][c].passengerAccount;
-             passengeraccount.transfer(PAYMENT_AMOUNT);
+             passengerfund[passengeraccount].add(PAYMENT_AMOUNT);
              claimStatus[passengeraccount] = 'Settled';
         }
         delete insuredFlights[flightID];
         emit evntClaimPaid(flightID);
+    }
+    function dc_approveWithdrawal
+                                (
+                                  address payable passengeraccount
+                                )
+                                external
+                                requireIsOperational
+                                requireAuthorizedCaller
+    {
+ 
+             passengeraccount.transfer(passengerfund[passengeraccount]);
+             emit evntClaimWithdrawn(passengeraccount);
     }
 
     /**

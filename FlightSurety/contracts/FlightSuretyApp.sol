@@ -277,6 +277,7 @@ contract FlightSuretyApp {
 
     function buy
                             (
+                                address airlineAddress,
                                 string memory flightID,
                                 string memory ticketNo
                             )
@@ -285,6 +286,8 @@ contract FlightSuretyApp {
                             requireIsOperational
                             paidEnough(AIRLINE_INSURANCE_FEE)
     {
+      require(flightsuretydata.dc_isAirlineRegistered(airlineAddress),
+        "Airline shall be part of consortium to buy insurace");        
            datacontractaddress.transfer(AIRLINE_INSURANCE_FEE);
            flightsuretydata.dc_buy(flightID,msg.sender,ticketNo);
     }
@@ -333,6 +336,16 @@ contract FlightSuretyApp {
                                 requireIsOperational
     {
          flightsuretydata.dc_creditInsurees(flightID);
+    }
+
+   function approveWithdrawal
+                                (
+                                  address payable passengeraccount
+                                )
+                                external
+                                requireIsOperational
+    {
+        flightsuretydata.dc_approveWithdrawal(passengeraccount);
     }
 
     // Generate a request for oracles to fetch flight information
@@ -629,6 +642,12 @@ contract FlightSuretyData{
                                 )
                                 external
     {
-
+    }
+   function dc_approveWithdrawal
+                                (
+                                  address payable passengeraccount
+                                )
+                                external
+    {
     }
 }
