@@ -16,7 +16,18 @@ import './flightsurety.css';
             display('Operational Status', 'Check if contract is operational', [ { label: 'Operational Status', error: error, value: result} ]);
         });
     
-
+        // User Buy Insurace
+        DOM.elid('buy-insurance').addEventListener('click', () => {
+            let flightID = DOM.elid('flight-number').value;
+            let seatnumber = DOM.elid('seat-number').value;
+            let premium = DOM.elid('premium').value;
+            console.log("premium");
+            // Write transaction
+            contract.buyInsurance(flightID,seatnumber, premium, (error, result) => {
+                display('Bought Insurace', ' for flight ', [ { label: 'Bought Insurace', error: error, value: result} ]);
+            });
+        })
+        
         // User-submitted transaction
         DOM.elid('submit-oracle').addEventListener('click', () => {
             let flightID = DOM.elid('flight-number').value;
