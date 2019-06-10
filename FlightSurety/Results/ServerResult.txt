@@ -1,0 +1,78 @@
+
+> flightsurety@1.0.0 server D:\Ambadas\OneDrive - Infosys Limited\STAR\OtherWork\BlockChain\Udacity\Project-8\FlightSurety
+> webpack --config webpack.config.server.js
+
+Hash: 2aaa87c06c7416bc1185
+Version: webpack 4.33.0
+Time: 14615ms
+Built at: 06/10/2019 1:05:59 PM
+    Asset     Size  Chunks             Chunk Names
+server.js  565 KiB       0  [emitted]  main
+Entrypoint main = server.js
+[0] multi webpack/hot/poll?1000 ./src/server/index 40 bytes {0} [built]
+[./build/contracts/FlightSuretyApp.json] 1.25 MiB {0} [built]
+[./node_modules/webpack/hot/log-apply-result.js] (webpack)/hot/log-apply-result.js 1.27 KiB {0} [built]
+[./node_modules/webpack/hot/log.js] (webpack)/hot/log.js 1.11 KiB {0} [built]
+[./node_modules/webpack/hot/poll.js?1000] (webpack)/hot/poll.js?1000 1.15 KiB {0} [built]
+[./src/server/config.json] 180 bytes {0} [built]
+[./src/server/index.js] 308 bytes {0} [built]
+[./src/server/server.js] 715 bytes {0} [built]
+[express] external "express" 42 bytes {0} [built]
+[http] external "http" 42 bytes {0} [built]
+[web3] external "web3" 42 bytes {0} [built]
+
+WARNING in configuration
+The 'mode' option has not been set, webpack will fallback to 'production' for this value. Set 'mode' option to 'development' or 'production' to enable defaults for each environment.
+You can also set it to 'none' to disable any default behavior. Learn more: https://webpack.js.org/configuration/mode/
+{ logIndex: 0,
+  transactionIndex: 0,
+  transactionHash:
+   '0x3e1fd6e792de34ffd79745e8002441d4ea2267c7795fc86c5d63c57a7180d74d',
+  blockHash:
+   '0xacd2804bb8a7e9208fcc2a3a3216c8eb4d9cbe3e74fd810f14f14d2d592b37fb',
+  blockNumber: 29,
+  address: '0x02d723FE0021369Bc073f1359f28907323551250',
+  type: 'mined',
+  id: 'log_d1385667',
+  returnValues:
+   Result {
+     '0': '2',
+     '1': '0x2dcE7d6Fe2d371a8269068F520Db4b7A544E3405',
+     '2': 'Flight1',
+     index: '2',
+     airline: '0x2dcE7d6Fe2d371a8269068F520Db4b7A544E3405',
+     flightID: 'Flight1' },
+  event: 'OracleRequest',
+  signature:
+   '0xbebb8952aae46e519afac036a69a4c07cb6cb2ea77bd62145ffe61bd097d0db2',
+  raw:
+   { data:
+      '0x00000000000000000000000000000000000000000000000000000000000000020000000000000000000000002dce7d6fe2d371a8269068f520db4b7a544e340500000000000000000000000000000000000000000000000000000000000000600000000000000000000000000000000000000000000000000000000000000007466c696768743100000000000000000000000000000000000000000000000000',
+     topics:
+      [ '0xbebb8952aae46e519afac036a69a4c07cb6cb2ea77bd62145ffe61bd097d0db2' ] } }
+{ logIndex: 0,
+  transactionIndex: 0,
+  transactionHash:
+   '0xa4703978dd668f5ef065fa4699c5994a54a3befea0637fb8471f83f02123f780',
+  blockHash:
+   '0xd9d753823da11a67b95a10849e66b06f7ac6b91aeb625c896ff92bc58c918c98',
+  blockNumber: 30,
+  address: '0x02d723FE0021369Bc073f1359f28907323551250',
+  type: 'mined',
+  id: 'log_785aa2ef',
+  returnValues:
+   Result {
+     '0': '5',
+     '1': '0x2dcE7d6Fe2d371a8269068F520Db4b7A544E3405',
+     '2': 'Flight1',
+     index: '5',
+     airline: '0x2dcE7d6Fe2d371a8269068F520Db4b7A544E3405',
+     flightID: 'Flight1' },
+  event: 'OracleRequest',
+  signature:
+   '0xbebb8952aae46e519afac036a69a4c07cb6cb2ea77bd62145ffe61bd097d0db2',
+  raw:
+   { data:
+      '0x00000000000000000000000000000000000000000000000000000000000000050000000000000000000000002dce7d6fe2d371a8269068f520db4b7a544e340500000000000000000000000000000000000000000000000000000000000000600000000000000000000000000000000000000000000000000000000000000007466c696768743100000000000000000000000000000000000000000000000000',
+     topics:
+      [ '0xbebb8952aae46e519afac036a69a4c07cb6cb2ea77bd62145ffe61bd097d0db2' ] } }
