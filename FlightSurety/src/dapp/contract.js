@@ -62,8 +62,10 @@ export default class Contract {
     buyInsurance(flightID, seatnumber,premium,callback) {
 
         let self = this;
-        let passengerAddr ="0xbd8Be1884f5b7bccCf567c37e2844B82499CCE65"; 
-        let airlineAddr ="0xDB27e7B7fed8c14DE2791239448B909c8aCB8836";
+        //let passengerAddr ="0xbd8Be1884f5b7bccCf567c37e2844B82499CCE65";
+          let passengerAddr = self.passengers[0]
+       // let airlineAddr ="0xDB27e7B7fed8c14DE2791239448B909c8aCB8836";
+       let airlineAddr = self.airlines[0];
        // this.reg_fee =  this.web3.utils.toWei("1", "ether");
         let price = self.web3.utils.toWei(premium, "ether");
         console.log("Airlne: ",airlineAddr," Price ",price);

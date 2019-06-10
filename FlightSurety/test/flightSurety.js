@@ -102,7 +102,7 @@ contract('Flight Surety Tests', async (accounts) => {
    it('Case 6: (airline) cannot register an Airline using registerAirline() if it is not funded enough', async () => {
     
     // ARRANGE
-    let newAirline = accounts[2];
+    let newAirline = accounts[6];
     let status = await config.flightSuretyApp.isOperational.call();
     let reg_fee =  web3.utils.toWei("9", "ether")
 
@@ -129,6 +129,7 @@ contract('Flight Surety Tests', async (accounts) => {
     let reg_fee =  web3.utils.toWei("10", "ether")
     let Airline_5 = accounts[5];    
 
+    
     //let status = await config.flightSuretyApp.isOperational.call();
     //console.log("UC7 status: "+status)
     await config.flightSuretyApp.registerAirline(Airline_2, {from: config.firstAirline, value : reg_fee});

@@ -5,7 +5,8 @@ let reg_fee =  web3.utils.toWei("10", "ether");
 
 module.exports = function(deployer) {
 
-    let firstAirline = '0xDB27e7B7fed8c14DE2791239448B909c8aCB8836';
+    let firstAirline = '0x2dcE7d6Fe2d371a8269068F520Db4b7A544E3405';
+    //let firstAirline = accounts[1];
     deployer.deploy(FlightSuretyData,{from:firstAirline})
     .then((flightsuretydata) => {
         return deployer.deploy(FlightSuretyApp,FlightSuretyData.address,{from:firstAirline})
